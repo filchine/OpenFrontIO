@@ -29,6 +29,22 @@ export type WarshipState = {
   veterancyProgress: number;
 };
 
+export type SubmarineState = {
+  state: "patrolling" | "retreating" | "docked";
+  patrolTile?: TileRef;
+  retreatPort?: TileRef;
+  isInCombat?: boolean;
+  lastCombatTick: number;
+  // Submarines have stealth: they can't be targeted by warships or defense posts
+  // when submerged, only by SAMs and other submarines.
+  isSubmerged: boolean;
+  // Time until submarine can submerge again after surfacing
+  submergeCooldown: number;
+  // Submarines also have veterancy
+  veterancy: number;
+  veterancyProgress: number;
+};
+
 export type TransportShipState = {
   isRetreating: boolean;
   troops: number;
@@ -536,4 +552,3 @@ export function formatPlayerDisplayName(
 ): string {
   return clanTag ? `[${clanTag}] ${username}` : username;
 }
-

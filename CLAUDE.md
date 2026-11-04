@@ -112,3 +112,14 @@ Only `tests/client/**` runs under jsdom; everything else runs in the `node` envi
 - **Schemas/Validation:** Zod
 - **Testing:** Vitest
 - **Server:** Node.js, Express, ws (WebSocket)
+
+## Git: Small, Reversible Commits
+
+- Make frequent, atomic commits: each commit should contain one logical change.
+- Do not combine unrelated features, fixes, or refactors in a single commit.
+- Before committing, review `git diff` and `git status`; stage only relevant files.
+- If a diff contains independent changes, split them into separate commits.
+- Keep changes together when they need to work as a unit (for example, code and its related tests).
+- Do not commit generated files, secrets, or the user's pre-existing changes without checking first.
+- After each unit of work, run the relevant tests and suggest a short, descriptive commit message.
+- Do not use `git reset --hard`, discard changes, or force-push without asking for confirmation.

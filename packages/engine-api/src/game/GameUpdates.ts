@@ -10,6 +10,7 @@ import {
   PlayerID,
   PlayerType,
   SamLauncherState,
+  SubmarineState,
   Team,
   Tick,
   TrainType,
@@ -207,6 +208,7 @@ export interface UnitUpdate {
   isActive: boolean;
   reachedTarget: boolean;
   warshipState?: WarshipState;
+  submarineState?: SubmarineState;
   transportShipState?: TransportShipState;
   nukeState?: NukeState;
   targetable: boolean;

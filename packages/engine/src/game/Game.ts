@@ -18,6 +18,7 @@ import {
   Relation,
   SamLauncherState,
   SpawnArea,
+  SubmarineState,
   Team,
   TerraNullius,
   Tick,
@@ -59,6 +60,10 @@ export interface UnitParamsMap {
   };
 
   [UnitType.Warship]: {
+    patrolTile: TileRef;
+  };
+
+  [UnitType.Submarine]: {
     patrolTile: TileRef;
   };
 
@@ -248,6 +253,8 @@ export interface Unit extends UnitLike {
   hasHealth(): boolean;
   warshipState(): WarshipState;
   updateWarshipState(update: Partial<WarshipState>): void;
+  submarineState(): SubmarineState;
+  updateSubmarineState(update: Partial<SubmarineState>): void;
   transportShipState(): TransportShipState;
   updateTransportShipState(update: Partial<TransportShipState>): void;
   nukeState(): NukeState;
