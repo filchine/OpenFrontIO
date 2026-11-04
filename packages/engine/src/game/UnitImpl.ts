@@ -3,6 +3,7 @@ import {
   MessageType,
   NukeState,
   SamLauncherState,
+  SubmarineState,
   TerraNullius,
   Tick,
   TrainType,
@@ -44,6 +45,7 @@ export class UnitImpl implements Unit {
   private _lastTile: TileRef;
   private _transportShipState: TransportShipState | undefined = undefined;
   private _warshipState: WarshipState | undefined = undefined;
+  private _submarineState: SubmarineState | undefined = undefined;
   private _nukeState: NukeState | undefined = undefined;
   private _reachedTarget = false;
   private _wasDestroyedByEnemy: boolean = false;
@@ -101,13 +103,25 @@ export class UnitImpl implements Unit {
       };
     }
     if ("patrolTile" in params) {
-      this._warshipState = {
-        state: "patrolling",
-        patrolTile: params.patrolTile,
-        lastCombatTick: -100,
-        veterancy: 0,
-        veterancyProgress: 0,
-      };
+      if (this._type === UnitType.Warship) {
+        this._warshipState = {
+          state: "patrolling",
+          patrolTile: params.patrolTile,
+          lastCombatTick: -100,
+          veterancy: 0,
+          veterancyProgress: 0,
+        };
+      } else if (this._type === UnitType.Submarine) {
+        this._submarineState = {
+          state: "patrolling",
+          patrolTile: params.patrolTile,
+          lastCombatTick: -100,
+          isSubmerged: true,
+          submergeCooldown: 0,
+          veterancy: 0,
+          veterancyProgress: 0,
+        };
+      }
     }
     this._targetUnit =
       "targetUnit" in params ? (params.targetUnit ?? undefined) : undefined;
@@ -169,6 +183,10 @@ export class UnitImpl implements Unit {
       warshipState:
         this._warshipState !== undefined
           ? { ...this.warshipState() }
+          : undefined,
+      submarineState:
+        this._submarineState !== undefined
+          ? { ...this.submarineState() }
           : undefined,
       transportShipState:
         this._transportShipState !== undefined
@@ -474,6 +492,55 @@ export class UnitImpl implements Unit {
   private markInCombat(): void {
     const wasInCombat = this.isInCombat();
     this._warshipState!.lastCombatTick = this.mg.ticks();
+    if (!wasInCombat) {
+      this.mg.addUpdate(this.toUpdate());
+    }
+  }
+
+  submarineState(): SubmarineState {
+    if (this._submarineState === undefined) {
+      throw new Error("submarineState called on non-submarine unit");
+    }
+    this._submarineState.isInCombat = this.isSubmarineInCombat();
+    return this._submarineState;
+  }
+
+  updateSubmarineState(update: Partial<SubmarineState>): void {
+    if (this._submarineState === undefined) {
+      throw new Error("updateSubmarineState called on non-submarine unit");
+    }
+    if (update.isInCombat) {
+      this.markSubmarineInCombat();
+    }
+    const merged = { ...this._submarineState, ...update };
+    if (
+      merged.state === this._submarineState.state &&
+      merged.patrolTile === this._submarineState.patrolTile &&
+      merged.retreatPort === this._submarineState.retreatPort &&
+      merged.isSubmerged === this._submarineState.isSubmerged &&
+      merged.submergeCooldown === this._submarineState.submergeCooldown
+    )
+      return;
+    this._submarineState = {
+      state: merged.state,
+      patrolTile: merged.patrolTile,
+      retreatPort: merged.retreatPort,
+      lastCombatTick: this._submarineState.lastCombatTick,
+      isSubmerged: merged.isSubmerged,
+      submergeCooldown: merged.submergeCooldown,
+      veterancy: this._submarineState.veterancy,
+      veterancyProgress: this._submarineState.veterancyProgress,
+    };
+    this.mg.addUpdate(this.toUpdate());
+  }
+
+  isSubmarineInCombat(): boolean {
+    return this.mg.ticks() - this._submarineState!.lastCombatTick <= 3;
+  }
+
+  private markSubmarineInCombat(): void {
+    const wasInCombat = this.isSubmarineInCombat();
+    this._submarineState!.lastCombatTick = this.mg.ticks();
     if (!wasInCombat) {
       this.mg.addUpdate(this.toUpdate());
     }
@@ -829,6 +896,19 @@ export class UnitImpl implements Unit {
             veterancyProgress: this._warshipState.veterancyProgress,
           }
         : null,
+      submarineState: this._submarineState
+        ? {
+            state: this._submarineState.state,
+            patrolTile: this._submarineState.patrolTile,
+            retreatPort: this._submarineState.retreatPort,
+            isInCombat: this._submarineState.isInCombat,
+            lastCombatTick: this._submarineState.lastCombatTick,
+            isSubmerged: this._submarineState.isSubmerged,
+            submergeCooldown: this._submarineState.submergeCooldown,
+            veterancy: this._submarineState.veterancy,
+            veterancyProgress: this._submarineState.veterancyProgress,
+          }
+        : null,
       nukeState: nuke
         ? {
             trajectoryTiles: Uint32Array.from(nuke.trajectory ?? []),
@@ -880,6 +960,9 @@ export class UnitImpl implements Unit {
       ? { ...s.transportShipState }
       : undefined;
     this._warshipState = s.warshipState ? { ...s.warshipState } : undefined;
+    this._submarineState = s.submarineState
+      ? { ...s.submarineState }
+      : undefined;
     const nuke = s.nukeState;
     this._nukeState = nuke
       ? {
@@ -937,6 +1020,20 @@ export const UnitSnapshot = snapshotType({
         veterancyProgress: zInt(),
       })
       .nullable(),
+    submarineState: z
+      .object({
+        state: z.enum(["patrolling", "retreating", "docked"]),
+        patrolTile: zTile().optional(),
+        retreatPort: zTile().optional(),
+        isInCombat: z.boolean().optional(),
+        lastCombatTick: zInt(),
+        isSubmerged: z.boolean(),
+        submergeCooldown: zInt(),
+        veterancy: zInt(),
+        veterancyProgress: zInt(),
+      })
+      .nullable()
+      .optional(),
     nukeState: z
       .object({
         trajectoryTiles: zTiles(),

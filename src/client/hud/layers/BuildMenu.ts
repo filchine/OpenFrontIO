@@ -27,6 +27,7 @@ import {
 import { UIState } from "../../UIState";
 import { GameView } from "../../view";
 const warshipIcon = assetUrl("images/BattleshipIconWhite.svg");
+const submarineIcon = assetUrl("images/DestroyerIconWhite.svg");
 const cityIcon = assetUrl("images/CityIconWhite.svg");
 const factoryIcon = assetUrl("images/FactoryIconWhite.svg");
 const goldCoinIcon = assetUrl("images/GoldCoinIcon.svg");
@@ -74,6 +75,13 @@ const buildTable: BuildItemDisplay[][] = [
       icon: warshipIcon,
       description: "build_menu.desc.warship",
       key: "unit_type.warship",
+      countable: true,
+    },
+    {
+      unitType: UnitType.Submarine,
+      icon: submarineIcon,
+      description: "build_menu.desc.submarine",
+      key: "unit_type.submarine",
       countable: true,
     },
     {

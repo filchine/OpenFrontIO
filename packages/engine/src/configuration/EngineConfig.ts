@@ -343,6 +343,11 @@ export class EngineConfig extends Config {
           (numUnits: number) => Math.min(1_000_000, (numUnits + 1) * 250_000),
           UnitType.Warship,
         );
+      case UnitType.Submarine:
+        return this.costWrapper(
+          (numUnits: number) => Math.min(1_000_000, (numUnits + 1) * 300_000),
+          UnitType.Submarine,
+        );
       case UnitType.Port:
         return this.costWrapper(
           (numUnits: number) => Math.min(1_000_000, pow2(numUnits) * 125_000),
@@ -782,6 +787,54 @@ export class EngineConfig extends Config {
 
   warshipPortSwitchThreshold(): number {
     return 0.75;
+  }
+
+  // --- Submarine config ---
+
+  submarinePatrolRange(): number {
+    return 120;
+  }
+
+  submarineTargettingRange(): number {
+    return 150;
+  }
+
+  submarineShellAttackRate(): number {
+    return 25;
+  }
+
+  submarineDockingRange(): number {
+    return 5;
+  }
+
+  submarinePortHealingBonusPerLevel(): number {
+    return 5;
+  }
+
+  /** Health at or below which a submarine retreats to repair, as a percent of its
+   *  (veterancy-adjusted) max health, so the threshold scales with max health. */
+  submarineRetreatHealthPercent(): number {
+    return 70;
+  }
+
+  submarinePassiveHealing(): number {
+    return 1;
+  }
+
+  submarinePassiveHealingRange(): number {
+    return 150;
+  }
+
+  submarinePortSwitchThreshold(): number {
+    return 0.75;
+  }
+
+  submarineSubmergeCooldown(): number {
+    return 100; // ticks (10 seconds)
+  }
+
+  submarineSubmergeDuration(): number {
+    return 500; // ticks (50 seconds)
   }
 
   // --- Warship veterancy ---

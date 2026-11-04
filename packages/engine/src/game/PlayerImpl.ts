@@ -1613,6 +1613,8 @@ export class PlayerImpl implements Player {
         return this.portSpawn(targetTile, validTiles);
       case UnitType.Warship:
         return this.warshipSpawn(targetTile);
+      case UnitType.Submarine:
+        return this.submarineSpawn(targetTile);
       case UnitType.Shell:
       case UnitType.SAMMissile:
         return targetTile;
@@ -1696,6 +1698,25 @@ export class PlayerImpl implements Player {
   }
 
   warshipSpawn(tile: TileRef): TileRef | false {
+    if (!this.mg.isWater(tile)) {
+      return false;
+    }
+
+    const tileComponent = this.mg.getWaterComponent(tile);
+    const bestPort = findClosestBy(
+      this.units(UnitType.Port),
+      (port) => this.mg.manhattanDist(port.tile(), tile),
+      (port) =>
+        port.isActive() &&
+        !port.isUnderConstruction() &&
+        tileComponent !== null &&
+        this.mg.hasWaterComponent(port.tile(), tileComponent),
+    );
+
+    return bestPort?.tile() ?? false;
+  }
+
+  submarineSpawn(tile: TileRef): TileRef | false {
     if (!this.mg.isWater(tile)) {
       return false;
     }

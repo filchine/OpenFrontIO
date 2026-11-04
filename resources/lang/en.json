@@ -201,6 +201,7 @@
       "missile_silo": "Used to launch nukes",
       "port": "Sends trade ships to generate gold",
       "sam_launcher": "Defends against incoming nukes",
+      "submarine": "Stealthy naval unit, captures trade ships and destroys boats",
       "warship": "Captures trade ships, destroys ships and boats"
     },
     "not_enough_money": "Not enough money",
@@ -854,6 +855,7 @@
       "nukeTrail": "Nuke Trail",
       "railroad": "Railroad",
       "structures": "Structures",
+      "submarine": "Submarine",
       "train": "Train",
       "transportShipTrail": "Boat Trail",
       "warship": "Warship"
@@ -2669,6 +2671,7 @@
     "missile_silo": "Missile Silo",
     "port": "Port",
     "sam_launcher": "SAM Launcher",
+    "submarine": "Submarine",
     "warship": "Warship"
   },
   "update_available": {
