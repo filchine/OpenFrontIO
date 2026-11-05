@@ -7,7 +7,6 @@ import {
   isDesktopShell,
 } from "../DesktopShell";
 import { currentGameVersion } from "../GameVersion";
-import "./SteamWishlistButton";
 
 @customElement("page-footer")
 export class Footer extends LitElement {
@@ -146,10 +145,6 @@ export class Footer extends LitElement {
         <div
           class="hidden lg:flex lg:col-start-3 lg:items-center lg:justify-end lg:pt-2 lg:pr-20"
         >
-          <steam-wishlist-button
-            campaign="home_desktop"
-            class="min-w-0 flex-1 max-w-[544px]"
-          ></steam-wishlist-button>
         </div>
 
         <!-- Single instance: translateText() resolves the active language via

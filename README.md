@@ -10,6 +10,8 @@
 
 This is a **fork** of the original [OpenFront.io](https://openfront.io/) by [filchine](https://github.com/filchine). The original project is at https://github.com/openfrontio/OpenFrontIO.
 
+> **Note:** This fork will be exclusively vibe coded, as the original project was already vibe coded from the beginning and I don't want to spend time learning TypeScript to maintain it.
+
 ![CI](https://github.com/openfrontio/OpenFrontIO/actions/workflows/ci.yml/badge.svg)
 [![Crowdin](https://badges.crowdin.net/openfront-mls/localized.svg)](https://crowdin.com/project/openfront-mls)
 [![CLA assistant](https://cla-assistant.io/readme/badge/openfrontio/OpenFrontIO)](https://cla-assistant.io/openfrontio/OpenFrontIO)
