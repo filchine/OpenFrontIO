@@ -8,7 +8,7 @@
 
 [OpenFront.io](https://openfront.io/) is an online real-time strategy game focused on territorial control and alliance building. Players compete to expand their territory, build structures, and form strategic alliances in various maps based on real-world geography.
 
-This is a fork/rewrite of WarFront.io. Credit to https://github.com/WarFrontIO.
+This is a **fork** of the original [OpenFront.io](https://openfront.io/) by [filchine](https://github.com/filchine). The original project is at https://github.com/openfrontio/OpenFrontIO.
 
 ![CI](https://github.com/openfrontio/OpenFrontIO/actions/workflows/ci.yml/badge.svg)
 [![Crowdin](https://badges.crowdin.net/openfront-mls/localized.svg)](https://crowdin.com/project/openfront-mls)
@@ -39,6 +39,7 @@ For license history, see [LICENSING.md](LICENSING.md).
 - **Multiple Maps**: Play across various geographical regions including Europe, Asia, Africa, and more
 - **Resource Management**: Balance your expansion with defensive capabilities
 - **Cross-platform**: Play in any modern web browser
+- **Submarines**: New stealth unit type with underwater mechanics
 
 ## 📋 Prerequisites
 
