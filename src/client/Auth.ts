@@ -522,6 +522,16 @@ async function doRefreshJwt(): Promise<void> {
       return doPortalLogin(portal, token);
     }
   }
+  // In self-hosted setups without a separate auth worker running on 8787,
+  // skip trying to refresh external JWT so startup is instantaneous.
+  if (
+    getApiBase().includes("localhost:8787") &&
+    localStorage.getItem("hasExternalApi") !== "true"
+  ) {
+    __jwt = null;
+    return;
+  }
+
   try {
     console.log("Refreshing jwt");
     // Bounded like doSteamLogin below: userAuth() awaits this, and every

@@ -1,5 +1,5 @@
 import { CloseCode } from "@openfront/shared/CloseCodes";
-import { PublicGames } from "@openfront/shared/WireSchemas";
+import { PublicGames, PublicLobbyMessage } from "@openfront/shared/WireSchemas";
 import { decodeLobbyMessage } from "@openfront/shared/ZbinWire";
 import { ClientEnv, NoServerError } from "src/client/ClientEnv";
 import { clientPlatform } from "./ClientPlatform";
@@ -217,9 +217,19 @@ export class PublicLobbySocket {
 
   private handleMessage(event: MessageEvent) {
     try {
-      const message = decodeLobbyMessage(
-        new Uint8Array(event.data as ArrayBuffer),
-      );
+      let message: PublicLobbyMessage;
+      if (typeof event.data === "string") {
+        message = JSON.parse(event.data) as PublicLobbyMessage;
+      } else if (event.data instanceof ArrayBuffer) {
+        const bytes = new Uint8Array(event.data);
+        if (bytes.length > 0 && bytes[0] === 123) {
+          message = JSON.parse(new TextDecoder().decode(bytes)) as PublicLobbyMessage;
+        } else {
+          message = decodeLobbyMessage(bytes);
+        }
+      } else {
+        return;
+      }
       this.wsConnectionAttempts = 0;
       this.gaveUp = false;
       if (message.type === "full") {

@@ -4,8 +4,6 @@ import { fileURLToPath } from "url";
 import express from "express";
 import http from "http";
 import { renderAppShell } from "./RenderHtml";
-import { startWorker } from "./Worker";
-import { ServerEnv } from "./ServerEnv";
 
 // Load environment variables before we read configuration values derived from them.
 dotenv.config();
@@ -47,25 +45,8 @@ async function main() {
   });
 }
 
-async function startWorkerWithExistingApp(app: express.Express, server: http.Server) {
-  // Import worker functionality dynamically to avoid circular deps
-  const { startWorker: originalStartWorker } = await import("./Worker");
-
-  // We can't easily reuse startWorker since it creates its own app/server
-  // For now, let's just run the original worker on a different port in a child process
-  // or just use the original startWorker but on the same server
-
-  // Actually, let's just run the worker as-is but on the same server
-  // by extracting the worker setup logic
-  const workerId = ServerEnv.workerId() ?? 0;
-
-  // The original startWorker creates its own app and server
-  // For single-process, we need to adapt it to use our existing app/server
-  // This is complex - simpler: just run the original startWorker on port 3001
-  // and proxy from our app to it
-
+async function startWorkerWithExistingApp(_app: express.Express, _server: http.Server) {
   // For now, let's just start the worker on port 3001 in the background
-  // This is a workaround until we properly merge them
   console.log("Worker will run on port 3001, main server on port 3000");
 }
 

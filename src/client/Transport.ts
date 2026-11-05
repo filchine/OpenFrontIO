@@ -42,7 +42,6 @@ import {
 import {
   createGameWireContext,
   decodeServerMessage,
-  encodeClientMessage,
 } from "@openfront/shared/ZbinWire";
 import { ZbContext } from "@openfront/zbin";
 import { ClientEnv, NoServerError } from "src/client/ClientEnv";
@@ -515,10 +514,22 @@ export class Transport {
       this.reconnectAttempts = 0;
       this.cancelReconnect();
       try {
-        const msg = decodeServerMessage(
-          new Uint8Array(event.data as ArrayBuffer),
-          this.zbinCtx ?? undefined,
-        );
+        let msg: ServerMessage;
+        if (typeof event.data === "string") {
+          msg = JSON.parse(event.data) as ServerMessage;
+        } else if (event.data instanceof ArrayBuffer) {
+          const bytes = new Uint8Array(event.data);
+          if (bytes.length > 0 && bytes[0] === 123) {
+            msg = JSON.parse(new TextDecoder().decode(bytes)) as ServerMessage;
+          } else {
+            msg = decodeServerMessage(
+              bytes,
+              this.zbinCtx ?? undefined,
+            );
+          }
+        } else {
+          return;
+        }
         if (msg.type === "redirect") {
           this.handlePoolRedirect(msg.gameID);
           return;
@@ -1071,7 +1082,7 @@ export class Transport {
         console.warn("msg is undefined");
         continue;
       }
-      this.socket.send(encodeClientMessage(msg, this.zbinCtx ?? undefined));
+      this.socket.send(JSON.stringify(msg));
     }
   }
 
@@ -1104,7 +1115,7 @@ export class Transport {
       this.buffer.push(msg);
     } else {
       // Session is ready and nothing is queued ahead: send directly.
-      this.socket.send(encodeClientMessage(msg, this.zbinCtx ?? undefined));
+      this.socket.send(JSON.stringify(msg));
     }
   }
 
