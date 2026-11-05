@@ -10,6 +10,7 @@ import { SoundEffectController } from "../controllers/SoundEffectController";
 import { StructureHighlightController } from "../controllers/StructureHighlightController";
 import { ViewModeController } from "../controllers/ViewModeController";
 import { WarshipSelectionController } from "../controllers/WarshipSelectionController";
+import { SubmarineSelectionController } from "../controllers/SubmarineSelectionController";
 import { GameStartingModal } from "../GameStartingModal";
 import { migrateLegacyGraphicsSettings } from "../GraphicsPresets";
 import { MapRenderer } from "../render/gl";
@@ -334,6 +335,7 @@ export function createRenderer(
 
   const layers: Controller[] = [
     new WarshipSelectionController(game, eventBus, transformHandler, view),
+    new SubmarineSelectionController(game, eventBus, transformHandler, view),
     new BuildPreviewController(
       game,
       eventBus,

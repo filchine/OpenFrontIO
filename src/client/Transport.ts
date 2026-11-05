@@ -241,6 +241,13 @@ export class MoveWarshipIntentEvent implements GameEvent {
   ) {}
 }
 
+export class MoveSubmarineIntentEvent implements GameEvent {
+  constructor(
+    public readonly unitIds: number[],
+    public readonly tile: number,
+  ) {}
+}
+
 // One-shot marker that this lobby has already sent us to a sibling, so a
 // redirect can never become a bounce.
 const poolRedirectLatch = (gameID: string) => `pool-redirect:${gameID}`;
@@ -360,6 +367,10 @@ export class Transport {
 
     this.subscribe(MoveWarshipIntentEvent, (e) => {
       this.onMoveWarshipEvent(e);
+    });
+
+    this.subscribe(MoveSubmarineIntentEvent, (e) => {
+      this.onMoveSubmarineEvent(e);
     });
 
     this.subscribe(SendDeleteUnitIntentEvent, (e) =>
@@ -990,6 +1001,14 @@ export class Transport {
   private onMoveWarshipEvent(event: MoveWarshipIntentEvent) {
     this.sendIntent({
       type: "move_warship",
+      unitIds: event.unitIds,
+      tile: event.tile,
+    });
+  }
+
+  private onMoveSubmarineEvent(event: MoveSubmarineIntentEvent) {
+    this.sendIntent({
+      type: "move_submarine",
       unitIds: event.unitIds,
       tile: event.tile,
     });

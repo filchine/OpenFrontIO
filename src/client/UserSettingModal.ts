@@ -308,6 +308,7 @@ export class UserSettingModal extends BaseModal {
       { actions: ["altKey", "emojiMenuModifier"], keyPrefix: "Alt" },
       { actions: ["buildScrollModifier", "altKey"], keyPrefix: "Alt" },
       { actions: ["boxSelectWarships", "shiftKey"], keyPrefix: "Shift" },
+      { actions: ["boxSelectSubmarines", "shiftKey"], keyPrefix: "Shift" },
     ];
 
     const isAllowedSharedModifier = ALLOWED_SHARED_MODIFIERS.some(
@@ -1531,6 +1532,17 @@ export class UserSettingModal extends BaseModal {
         .defaultKey=${this.defaultKeybinds.boxSelectWarships}
         .value=${this.getKeyValue("boxSelectWarships")}
         .display=${this.getKeyChar("boxSelectWarships")}
+        @change=${this.handleKeybindChange}
+      ></setting-keybind>
+
+      <setting-keybind
+        action="boxSelectSubmarines"
+        .allowModifiers=${true}
+        label=${translateText("user_setting.box_select_submarines")}
+        description=${translateText("user_setting.box_select_submarines_desc")}
+        .defaultKey=${this.defaultKeybinds.boxSelectSubmarines}
+        .value=${this.getKeyValue("boxSelectSubmarines")}
+        .display=${this.getKeyChar("boxSelectSubmarines")}
         @change=${this.handleKeybindChange}
       ></setting-keybind>
 

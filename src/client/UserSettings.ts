@@ -69,6 +69,7 @@ export function getDefaultKeybinds(isMac: boolean): Record<string, string> {
     buildScrollModifier: "AltLeft",
     emojiMenuModifier: "AltLeft",
     boxSelectWarships: "ShiftLeft",
+    boxSelectSubmarines: "ShiftRight",
     shiftKey: "ShiftLeft",
     resetGfx: "KeyR",
     selectAllWarships: "KeyX",

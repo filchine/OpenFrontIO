@@ -204,6 +204,32 @@ export class WarshipSelectionBoxCancelEvent implements GameEvent {}
 /** Emitted when the player triggers select-all-warships hotkey */
 export class SelectAllWarshipsEvent implements GameEvent {}
 
+/** Emitted while the user is drawing a shift+drag selection rectangle for submarines */
+export class SubmarineSelectionBoxUpdateEvent implements GameEvent {
+  constructor(
+    public readonly startX: number,
+    public readonly startY: number,
+    public readonly endX: number,
+    public readonly endY: number,
+  ) {}
+}
+
+/** Emitted when the user releases the mouse after drawing a selection rectangle for submarines */
+export class SubmarineSelectionBoxCompleteEvent implements GameEvent {
+  constructor(
+    public readonly startX: number,
+    public readonly startY: number,
+    public readonly endX: number,
+    public readonly endY: number,
+  ) {}
+}
+
+/** Emitted when the selection box is cancelled (e.g. Escape or no drag) for submarines */
+export class SubmarineSelectionBoxCancelEvent implements GameEvent {}
+
+/** Emitted when the player triggers select-all-submarines hotkey */
+export class SelectAllSubmarinesEvent implements GameEvent {}
+
 /** Emitted when a touch long-press is detected (shows crosshair indicator) */
 export class TouchLongPressStartEvent implements GameEvent {
   constructor(
@@ -378,6 +404,8 @@ export class InputHandler {
 
   // Warship selection box state
   private selectionBoxActive: boolean = false;
+  // Submarine selection box state
+  private submarineSelectionBoxActive: boolean = false;
   // True while warships are selected via box (waiting for move target click)
   private multiSelectionActive: boolean = false;
   // True while any warship/boat is selected (single or multi) — right-click
@@ -508,6 +536,7 @@ export class InputHandler {
     this.suppressNextTap = false;
     this.touchPlacementDragState = "idle";
     this.selectionBoxActive = false;
+    this.submarineSelectionBoxActive = false;
     this.multiSelectionActive = false;
   }
 
@@ -770,10 +799,13 @@ export class InputHandler {
           this.eventBus.emit(new AlternateViewEvent(false));
         }
         const hadSelection =
-          this.selectionBoxActive || this.multiSelectionActive;
+          this.selectionBoxActive ||
+          this.submarineSelectionBoxActive ||
+          this.multiSelectionActive;
         this.resetPointerState();
         if (hadSelection) {
           this.eventBus.emit(new WarshipSelectionBoxCancelEvent());
+          this.eventBus.emit(new SubmarineSelectionBoxCancelEvent());
         }
         this.canvas.style.cursor = "";
       },
@@ -788,9 +820,13 @@ export class InputHandler {
       // Skip movement if selection box drag is active or a non-Shift warship selector is held
       if (
         this.selectionBoxActive ||
+        this.submarineSelectionBoxActive ||
         (this.keybinds.boxSelectWarships !== "ShiftLeft" &&
           this.keybinds.boxSelectWarships !== "ShiftRight" &&
-          this.activeKeys.has(this.keybinds.boxSelectWarships))
+          this.activeKeys.has(this.keybinds.boxSelectWarships)) ||
+        (this.keybinds.boxSelectSubmarines !== "ShiftLeft" &&
+          this.keybinds.boxSelectSubmarines !== "ShiftRight" &&
+          this.activeKeys.has(this.keybinds.boxSelectSubmarines))
       ) {
         return;
       }
@@ -917,6 +953,12 @@ export class InputHandler {
             closedUI = true;
           }
 
+          if (this.submarineSelectionBoxActive) {
+            this.submarineSelectionBoxActive = false;
+            this.eventBus.emit(new SubmarineSelectionBoxCancelEvent());
+            closedUI = true;
+          }
+
           this.eventBus.emit(new CloseViewEvent());
 
           if (
@@ -991,6 +1033,7 @@ export class InputHandler {
               "MetaLeft",
               "MetaRight",
               this.keybinds.boxSelectWarships,
+              this.keybinds.boxSelectSubmarines,
               this.keybinds.emojiMenuModifier,
               this.keybinds.buildMenuModifier,
               this.keybinds.buildScrollModifier,
@@ -1003,6 +1046,14 @@ export class InputHandler {
         // warship box selection mode.
         // If a ghost structure is active, discard it first.
         if (e.code === this.keybinds.boxSelectWarships) {
+          if (this.uiState.ghostStructure !== null) {
+            this.setGhostStructure(null);
+          }
+          this.canvas.style.cursor = "crosshair";
+        }
+        // submarine box selection mode.
+        // If a ghost structure is active, discard it first.
+        if (e.code === this.keybinds.boxSelectSubmarines) {
           if (this.uiState.ghostStructure !== null) {
             this.setGhostStructure(null);
           }
@@ -1102,6 +1153,14 @@ export class InputHandler {
         // Reset crosshair when Shift is released (unless selection box or multi-selection still active)
         if (
           e.code === this.keybinds.boxSelectWarships &&
+          !this.selectionBoxActive &&
+          !this.multiSelectionActive
+        ) {
+          this.canvas.style.cursor = "";
+        }
+        // Reset crosshair when submarine select key is released (unless selection box or multi-selection still active)
+        if (
+          e.code === this.keybinds.boxSelectSubmarines &&
           !this.selectionBoxActive &&
           !this.multiSelectionActive
         ) {
@@ -1308,6 +1367,10 @@ export class InputHandler {
     if (event.type === "pointercancel") {
       this.suppressNextTap = false;
       this.canvas.style.cursor = "";
+      if (this.submarineSelectionBoxActive) {
+        this.submarineSelectionBoxActive = false;
+        this.eventBus.emit(new SubmarineSelectionBoxCancelEvent());
+      }
       if (this.selectionBoxActive) {
         this.selectionBoxActive = false;
         this.eventBus.emit(new WarshipSelectionBoxCancelEvent());
@@ -1321,6 +1384,27 @@ export class InputHandler {
       // suppress the tap so we don't emit a spurious TouchEvent
       if (!this.selectionBoxActive) {
         this.suppressNextTap = true;
+      }
+    }
+
+    // Complete submarine selection box if it was active
+    if (this.submarineSelectionBoxActive) {
+      this.submarineSelectionBoxActive = false;
+      const dist =
+        Math.abs(event.clientX - this.lastPointerDownX) +
+        Math.abs(event.clientY - this.lastPointerDownY);
+      if (dist >= this.DRAG_THRESHOLD_PX) {
+        this.eventBus.emit(
+          new SubmarineSelectionBoxCompleteEvent(
+            this.lastPointerDownX,
+            this.lastPointerDownY,
+            event.clientX,
+            event.clientY,
+          ),
+        );
+        return;
+      } else {
+        this.eventBus.emit(new SubmarineSelectionBoxCancelEvent());
       }
     }
 
@@ -1553,6 +1637,19 @@ export class InputHandler {
       } else if (this.touchPlacementDragState === "candidate") {
         // Keep a hold that began on the preview stable until the long-press
         // threshold is reached; ordinary touches elsewhere still pan.
+      } else if (
+        this.submarineSelectionBoxActive ||
+        this.activeKeys.has(this.keybinds.boxSelectSubmarines)
+      ) {
+        this.submarineSelectionBoxActive = true;
+        this.eventBus.emit(
+          new SubmarineSelectionBoxUpdateEvent(
+            this.lastPointerDownX,
+            this.lastPointerDownY,
+            event.clientX,
+            event.clientY,
+          ),
+        );
       } else if (
         this.selectionBoxActive ||
         this.activeKeys.has(this.keybinds.boxSelectWarships) ||
