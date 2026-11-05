@@ -98,6 +98,22 @@ This will:
 - Launch the game server with development settings
 - Open the game in your default browser (to disable this behavior, set `SKIP_BROWSER_OPEN=true` in your environment)
 
+> **⚠️ Important:** Plain `npm run dev` runs **without connecting to the external authentication API**. You'll get a generated username but **cannot create or join lobbies**, purchase cosmetics, or access player profiles. The game simulation runs locally, but auth/stats/cosmetics require the Cloudflare Worker API (closed source).
+
+### Development Mode with Authentication (Recommended)
+
+To enable full functionality (lobbies, auth, cosmetics, leaderboards), connect to the staging or production API:
+
+```bash
+# Staging environment (recommended for development)
+npm run dev:staging
+
+# Production environment (for testing against live data)
+npm run dev:prod
+```
+
+These commands connect to `api.openfront.dev` (staging) or `api.openfront.io` (prod) for authentication, allowing you to sign in and use all features.
+
 ### Client Only
 
 To run just the client with hot reloading:
