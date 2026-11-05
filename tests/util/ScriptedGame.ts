@@ -223,6 +223,7 @@ function queuedIntent(game: Game, p: Player, tick: number): Intent | null {
     },
     { type: "upgrade_structure", unit: UnitType.City, unitId: 1 },
     { type: "move_warship", unitIds: [1], tile: 0 },
+    { type: "move_submarine", unitIds: [1], tile: 0 },
     { type: "delete_unit", unitId: 1 },
     {
       type: "quick_chat",
@@ -434,6 +435,36 @@ function moveWarshipIntent(
   return { type: "move_warship", unitIds: [ship.id()], tile: water };
 }
 
+function buildSubmarineIntent(
+  game: Game,
+  p: Player,
+  rand: PseudoRandom,
+): Intent | null {
+  const ports = p
+    .units(UnitType.Port)
+    .filter((port) => port.isActive() && !port.isUnderConstruction());
+  const port = pick(rand, ports);
+  if (port === null) return null;
+  const water = nearbyWater(game, port.tile(), rand);
+  if (water === null || p.canBuild(UnitType.Submarine, water) === false) {
+    return null;
+  }
+  return { type: "build_unit", unit: UnitType.Submarine, tile: water };
+}
+
+function moveSubmarineIntent(
+  game: Game,
+  p: Player,
+  rand: PseudoRandom,
+): Intent | null {
+  const ships = p.units(UnitType.Submarine);
+  const ship = pick(rand, ships);
+  if (ship === null) return null;
+  const water = nearbyWater(game, ship.tile(), rand);
+  if (water === null) return null;
+  return { type: "move_submarine", unitIds: [ship.id()], tile: water };
+}
+
 function playIntent(game: Game, p: Player, rand: PseudoRandom): Intent | null {
   if (!p.isAlive()) return null;
   // Most ticks a human does nothing; keep the game moving.
@@ -458,6 +489,16 @@ function playIntent(game: Game, p: Player, rand: PseudoRandom): Intent | null {
   ) {
     const warshipIntent = buildWarshipIntent(game, p, rand);
     if (warshipIntent !== null) return warshipIntent;
+  }
+  if (
+    p
+      .units(UnitType.Port)
+      .some((prt) => prt.isActive() && !prt.isUnderConstruction()) &&
+    p.units(UnitType.Submarine).length === 0 &&
+    rand.chance(2)
+  ) {
+    const submarineIntent = buildSubmarineIntent(game, p, rand);
+    if (submarineIntent !== null) return submarineIntent;
   }
   const others = game.players().filter((o) => o !== p && o.isPlayer());
   const other = pick(rand, others);
@@ -575,12 +616,16 @@ function playIntent(game: Game, p: Player, rand: PseudoRandom): Intent | null {
     }
     case 19:
       return moveWarshipIntent(game, p, rand);
-    case 20: {
+    case 20:
+      return moveSubmarineIntent(game, p, rand);
+    case 21: {
       const s = pick(rand, own([UnitType.DefensePost, UnitType.City]));
       if (s === null || !rand.chance(4)) return null;
       return { type: "delete_unit", unitId: s.id() };
     }
-    case 21:
+    case 22:
+      return buildSubmarineIntent(game, p, rand);
+    case 23:
       return {
         type: "mark_disconnected",
         isDisconnected: !p.isDisconnected() && rand.chance(3),

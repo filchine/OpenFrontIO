@@ -1,6 +1,7 @@
 import { TileRef } from "@openfront/engine-api/game/GameMap";
 import {
   NukeState,
+  SubmarineState,
   Tick,
   TrainType,
   TransportShipState,
@@ -33,8 +34,9 @@ export class UnitView implements UnitLike {
   public lastPos: TileRef[] = [];
   /** Long-lived renderer state — mutated in place by update(). */
   public state: UnitState;
-  /** Engine-only fields not in UnitState. Use warshipState() / transportShipState() to read. */
+  /** Engine-only fields not in UnitState. Use warshipState() / submarineState() / transportShipState() to read. */
   private _warshipState?: WarshipState;
+  private _submarineState?: SubmarineState;
   private _transportShipState?: TransportShipState;
   private _nukeState?: NukeState;
   private _createdAt: Tick;
@@ -45,6 +47,7 @@ export class UnitView implements UnitLike {
   ) {
     this.state = unitStateFromUpdate(data);
     this._warshipState = data.warshipState;
+    this._submarineState = data.submarineState;
     this._transportShipState = data.transportShipState;
     this._nukeState = data.nukeState;
     this.lastPos.push(data.pos);
@@ -79,6 +82,7 @@ export class UnitView implements UnitLike {
     const wasUnderConstruction = this.state.underConstruction;
     applyUnitUpdateInPlace(this.state, data);
     this._warshipState = data.warshipState;
+    this._submarineState = data.submarineState;
     this._transportShipState = data.transportShipState;
     this._nukeState = data.nukeState;
     // constructionStartTick: set on transition into underConstruction.
@@ -131,8 +135,20 @@ export class UnitView implements UnitLike {
   updateWarshipState(_update: Partial<WarshipState>): void {
     throw new Error("updateWarshipState is not supported on UnitView");
   }
+  submarineState(): SubmarineState {
+    if (this._submarineState === undefined) {
+      throw new Error("submarineState called on non-submarine unit");
+    }
+    return this._submarineState;
+  }
+  updateSubmarineState(_update: Partial<SubmarineState>): void {
+    throw new Error("updateSubmarineState is not supported on UnitView");
+  }
   isInCombat(): boolean {
-    return this._warshipState?.isInCombat ?? false;
+    return (
+      (this._warshipState?.isInCombat ?? false) ||
+      (this._submarineState?.isInCombat ?? false)
+    );
   }
   touch(): void {
     throw new Error("touch is not supported on UnitView");

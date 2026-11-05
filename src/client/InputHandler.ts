@@ -139,6 +139,7 @@ export function highlightTypesForUnit(
     case UnitType.HydrogenBomb:
       return [UnitType.MissileSilo, UnitType.SAMLauncher];
     case UnitType.Warship:
+    case UnitType.Submarine:
       return [UnitType.Port];
     case UnitType.MIRV:
       return [UnitType.MissileSilo];
@@ -388,6 +389,9 @@ export class InputHandler {
   private lastPointerDownX: number = 0;
   private lastPointerDownY: number = 0;
 
+  /** Tracks naval build hotkey cycle: 0 = none, 1 = warship, 2 = submarine */
+  private navalBuildMode: 0 | 1 | 2 = 0;
+
   private pointers: Map<number, PointerEvent> = new Map();
   private passThroughPointers: Map<number, { x: number; y: number }> =
     new Map();
@@ -561,6 +565,11 @@ export class InputHandler {
     this.addKeybindAndEvent(this.keybinds.selectAllWarships, () => {
       this.eventBus.emit(new SelectAllWarshipsEvent());
     });
+    if (this.keybinds.selectAllSubmarines) {
+      this.addKeybindAndEvent(this.keybinds.selectAllSubmarines, () => {
+        this.eventBus.emit(new SelectAllSubmarinesEvent());
+      });
+    }
     this.addKeybindAndEvent(this.keybinds.requestAlliance, () => {
       this.eventBus.emit(new DoRequestAllianceEvent());
     });
@@ -657,6 +666,7 @@ export class InputHandler {
       "buildAtomBomb",
       "buildHydrogenBomb",
       "buildWarship",
+      "buildSubmarine",
       "buildMIRV",
     ];
     buildKeybinds = buildKeybinds.map((i: string): string => {
@@ -694,11 +704,43 @@ export class InputHandler {
     buildKeybinds = [...new Set(buildKeybinds)].filter((v): v is string =>
       Boolean(v),
     );
+
+    // Get the buildWarship keybind code (without shift) for cycling detection
+    const buildWarshipKeybind = this.keybinds.buildWarship;
+    const buildWarshipCode = buildWarshipKeybind?.split("+").pop() ?? "Digit7";
+
     for (const i of buildKeybinds) {
       this.addKeybindAndEvent(
         i,
         (e: KeyboardEvent) => {
           const matchedBuild = this.resolveBuildKeybind(e.code, e.shiftKey);
+
+          // Special handling for naval build cycling on the buildWarship key
+          // (default: Digit7). Press once -> Warship, twice -> Submarine, thrice -> None.
+          if (
+            matchedBuild === UnitType.Warship &&
+            e.code === buildWarshipCode &&
+            !e.shiftKey
+          ) {
+            // Cycle: 0 -> 1 (Warship) -> 2 (Submarine) -> 0 (None)
+            this.navalBuildMode =
+              this.navalBuildMode === 2
+                ? 0
+                : (this.navalBuildMode + 1) as 0 | 1 | 2;
+            const cycleBuild =
+              this.navalBuildMode === 1
+                ? UnitType.Warship
+                : this.navalBuildMode === 2
+                  ? UnitType.Submarine
+                  : null;
+            this.setGhostStructure(cycleBuild);
+            return;
+          }
+
+          // Reset naval build mode when a different build key is pressed
+          if (matchedBuild !== null && matchedBuild !== UnitType.Warship) {
+            this.navalBuildMode = 0;
+          }
 
           if (matchedBuild !== null) {
             this.setGhostStructure(matchedBuild);
@@ -1966,14 +2008,17 @@ export class InputHandler {
       { key: "buildAtomBomb", type: UnitType.AtomBomb },
       { key: "buildHydrogenBomb", type: UnitType.HydrogenBomb },
       { key: "buildWarship", type: UnitType.Warship },
+      { key: "buildSubmarine", type: UnitType.Submarine },
       { key: "buildMIRV", type: UnitType.MIRV },
     ];
     for (const { key, type } of buildKeybinds) {
-      if (this.keybindMatchesEvent({ code, shiftKey }, this.keybinds[key]))
+      const bind = this.keybinds[key];
+      if (bind && this.keybindMatchesEvent({ code, shiftKey }, bind))
         return type;
     }
     for (const { key, type } of buildKeybinds) {
-      if (this.buildKeybindMatchesDigit(code, shiftKey, this.keybinds[key]))
+      const bind = this.keybinds[key];
+      if (bind && this.buildKeybindMatchesDigit(code, shiftKey, bind))
         return type;
     }
     return null;

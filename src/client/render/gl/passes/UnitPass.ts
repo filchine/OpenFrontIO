@@ -44,6 +44,7 @@ import {
   UT_MIRV_WARHEAD,
   UT_SAM_MISSILE,
   UT_SHELL,
+  UT_SUBMARINE,
   UT_TRADE_SHIP,
   UT_TRAIN,
   UT_TRANSPORT,
@@ -286,6 +287,7 @@ export class UnitPass {
         this.typeToAtlasCol.set(header.unitTypes[i], col);
       }
     }
+    this.typeToAtlasCol.set(UT_SUBMARINE, WARSHIP_COL);
 
     // Compile shaders
     this.program = createProgram(
@@ -476,9 +478,11 @@ export class UnitPass {
       if (atlasIdx === undefined) continue;
 
       const isRetreatingWarship =
-        unit.unitType === UT_WARSHIP && unit.retreating;
+        (unit.unitType === UT_WARSHIP || unit.unitType === UT_SUBMARINE) &&
+        unit.retreating;
       const isAngryWarship =
-        unit.unitType === UT_WARSHIP && unit.targetUnitId !== null;
+        (unit.unitType === UT_WARSHIP || unit.unitType === UT_SUBMARINE) &&
+        unit.targetUnitId !== null;
       const isFlicker = FLICKER_TYPES.has(unit.unitType);
 
       // Alt-view trade ship color from owner + destination port owner:

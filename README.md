@@ -40,6 +40,14 @@ For license history, see [LICENSING.md](LICENSING.md).
 - **Resource Management**: Balance your expansion with defensive capabilities
 - **Cross-platform**: Play in any modern web browser
 - **Submarines**: New stealth unit type with underwater mechanics
+- **Nation AI**: AI-controlled nations with difficulty-based behavior (Easy/Medium/Hard/Impossible)
+
+## 📚 Documentation
+
+- **[Unit & NPC Behavior Reference](UNIT_BEHAVIOR.md)** — Comprehensive guide to all unit types, submarine mechanics, and Nation AI behavior
+- **[Architecture](docs/Architecture.md)** — Game architecture and simulation flow
+- **[API](docs/API.md)** — Public API endpoints
+- **[Auth](docs/Auth.md)** — JWT/authentication flow
 
 ## 📋 Prerequisites
 

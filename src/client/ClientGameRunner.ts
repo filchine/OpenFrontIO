@@ -78,6 +78,7 @@ import { themeProvider } from "./theme/ThemeProvider";
 import { GoToPlayerEvent } from "./TransformHandler";
 import {
   counterAttackTroops,
+  MoveSubmarineIntentEvent,
   MoveWarshipIntentEvent,
   NewLobbyEvent,
   SendAllianceExtensionIntentEvent,
@@ -619,6 +620,14 @@ function mountWebGLFrameLoop(
     const tx = gameView.x(tile);
     const ty = gameView.y(tile);
     // Resolve owner via the first unit in the move set.
+    const firstUnit = gameView.unit(e.unitIds[0]);
+    if (firstUnit === undefined) return;
+    view.showMoveIndicator(tx, ty, firstUnit.owner().smallID());
+  });
+  eventBus.on(MoveSubmarineIntentEvent, (e) => {
+    const tile = e.tile;
+    const tx = gameView.x(tile);
+    const ty = gameView.y(tile);
     const firstUnit = gameView.unit(e.unitIds[0]);
     if (firstUnit === undefined) return;
     view.showMoveIndicator(tx, ty, firstUnit.owner().smallID());

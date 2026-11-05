@@ -324,9 +324,10 @@ export class UnitImpl implements Unit {
     if (
       attacker !== undefined &&
       delta < 0 &&
-      this._warshipState !== undefined
+      (this._warshipState !== undefined || this._submarineState !== undefined)
     ) {
-      this._warshipState.lastCombatTick = this.mg.ticks();
+      const navalState = (this._warshipState ?? this._submarineState)!;
+      navalState.lastCombatTick = this.mg.ticks();
     }
     this._health = nextHealth;
     this.mg.addUpdate(this.toUpdate());
@@ -407,6 +408,7 @@ export class UnitImpl implements Unit {
         case UnitType.Port:
         case UnitType.SAMLauncher:
         case UnitType.Warship:
+        case UnitType.Submarine:
         case UnitType.Factory:
           this.mg.stats().unitDestroy(destroyer, this._type);
           this.mg.stats().unitLose(this.owner(), this._type);
@@ -416,10 +418,11 @@ export class UnitImpl implements Unit {
   }
 
   private displayMessageOnDeleted(): void {
-    // Only warships and transport ships are worth notifying about; everything
-    // else is either visible on the map or too low-stakes to surface.
+    // Only warships, submarines and transport ships are worth notifying about;
+    // everything else is either visible on the map or too low-stakes to surface.
     if (
       this._type !== UnitType.Warship &&
+      this._type !== UnitType.Submarine &&
       this._type !== UnitType.TransportShip
     ) {
       return;
@@ -434,7 +437,9 @@ export class UnitImpl implements Unit {
         unit:
           this._type === UnitType.TransportShip
             ? "unit_type.boat"
-            : "unit_type.warship",
+            : this._type === UnitType.Submarine
+              ? "unit_type.submarine"
+              : "unit_type.warship",
       },
       this.id(),
     );
@@ -722,33 +727,33 @@ export class UnitImpl implements Unit {
   }
 
   veterancy(): number {
-    return this._warshipState?.veterancy ?? 0;
+    return (this._warshipState ?? this._submarineState)?.veterancy ?? 0;
   }
 
   /** Raise veterancy by one level (capped), which raises max health. The ship
    *  is NOT instantly healed — it heals toward the higher cap normally.
    *  No-op for non-warships or at the cap. */
   private increaseVeterancy(): void {
-    if (this._warshipState === undefined) {
+    const navalState = this._warshipState ?? this._submarineState;
+    if (navalState === undefined) {
       return;
     }
-    if (
-      this._warshipState.veterancy >= this.mg.config().warshipMaxVeterancy()
-    ) {
+    if (navalState.veterancy >= this.mg.config().warshipMaxVeterancy()) {
       return;
     }
-    this._warshipState.veterancy++;
+    navalState.veterancy++;
     this.mg.addUpdate(this.toUpdate());
   }
 
   recordKill(targetType: UnitType): void {
-    if (this._warshipState === undefined) {
+    const navalState = this._warshipState ?? this._submarineState;
+    if (navalState === undefined) {
       return;
     }
-    if (targetType === UnitType.Warship) {
-      // Final blow on an enemy warship: instant level, and the partial
+    if (targetType === UnitType.Warship || targetType === UnitType.Submarine) {
+      // Final blow on an enemy warship/submarine: instant level, and the partial
       // transport/capture progress toward the next level is wiped.
-      this._warshipState.veterancyProgress = 0;
+      navalState.veterancyProgress = 0;
       this.increaseVeterancy();
     } else if (targetType === UnitType.TransportShip) {
       this.addVeterancyProgress(UnitType.TransportShip);
@@ -756,7 +761,8 @@ export class UnitImpl implements Unit {
   }
 
   recordTradeCapture(): void {
-    if (this._warshipState === undefined) {
+    const navalState = this._warshipState ?? this._submarineState;
+    if (navalState === undefined) {
       return;
     }
     this.addVeterancyProgress(UnitType.TradeShip);
@@ -773,11 +779,12 @@ export class UnitImpl implements Unit {
    * Overflow carries into the next level (only a warship kill resets it).
    */
   private addVeterancyProgress(source: UnitType): void {
-    if (this._warshipState === undefined) {
+    const navalState = this._warshipState ?? this._submarineState;
+    if (navalState === undefined) {
       return;
     }
     const maxVeterancy = this.mg.config().warshipMaxVeterancy();
-    if (this._warshipState.veterancy >= maxVeterancy) {
+    if (navalState.veterancy >= maxVeterancy) {
       return;
     }
     const transportThreshold = this.mg
@@ -785,17 +792,17 @@ export class UnitImpl implements Unit {
       .warshipVeterancyTransportKills();
     const captureThreshold = this.mg.config().warshipVeterancyTradeCaptures();
     const pointsPerLevel = transportThreshold * captureThreshold;
-    this._warshipState.veterancyProgress +=
+    navalState.veterancyProgress +=
       source === UnitType.TransportShip ? captureThreshold : transportThreshold;
     while (
-      this._warshipState.veterancyProgress >= pointsPerLevel &&
-      this._warshipState.veterancy < maxVeterancy
+      navalState.veterancyProgress >= pointsPerLevel &&
+      navalState.veterancy < maxVeterancy
     ) {
-      this._warshipState.veterancyProgress -= pointsPerLevel;
+      navalState.veterancyProgress -= pointsPerLevel;
       this.increaseVeterancy();
     }
-    if (this._warshipState.veterancy >= maxVeterancy) {
-      this._warshipState.veterancyProgress = 0;
+    if (navalState.veterancy >= maxVeterancy) {
+      navalState.veterancyProgress = 0;
     }
   }
 

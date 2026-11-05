@@ -4,7 +4,6 @@ import { EventBus } from "@openfront/shared/EventBus";
 import { Controller } from "../Controller";
 import {
   CloseViewEvent,
-  ContextMenuEvent,
   MouseUpEvent,
   SelectAllSubmarinesEvent,
   TouchEvent,
@@ -207,8 +206,8 @@ export class SubmarineSelectionController implements Controller {
   }
 
   /**
-   * Touch handler mirroring mouse-up. On dry land with no selection, falls
-   * back to opening the radial menu.
+   * Touch handler mirroring mouse-up for submarine selection and movement.
+   * Land/empty-water fallback to ContextMenuEvent is handled by WarshipSelectionController.
    */
   private onTouch(event: TouchEvent) {
     const cell = this.transformHandler.screenToWorldCoordinates(
@@ -218,19 +217,11 @@ export class SubmarineSelectionController implements Controller {
     if (!this.game.isValidCoord(cell.x, cell.y)) return;
 
     const clickRef = this.game.ref(cell.x, cell.y);
-    // The onboarding tutorial teaches one tap: on land it spawns, attacks
-    // or sends a boat directly, without the radial menu.
     if (
       this.game.inSpawnPhase() ||
-      this.game.config().gameConfig().tutorial === true
+      this.game.config().gameConfig().tutorial === true ||
+      !this.game.isWater(clickRef)
     ) {
-      if (!this.game.isWater(clickRef)) {
-        this.eventBus.emit(new MouseUpEvent(event.x, event.y));
-      }
-      return;
-    }
-    if (!this.game.isWater(clickRef)) {
-      this.eventBus.emit(new ContextMenuEvent(event.x, event.y));
       return;
     }
     if (this.selectedUnit || this.multiSelectedSubmarines.length > 0) {
@@ -244,8 +235,6 @@ export class SubmarineSelectionController implements Controller {
         clickRef,
         nearbySubmarines,
       );
-    } else {
-      this.eventBus.emit(new ContextMenuEvent(event.x, event.y));
     }
   }
 
@@ -314,6 +303,17 @@ export class SubmarineSelectionController implements Controller {
    * When event.isSelected is false it clears all selection state.
    */
   private onUnitSelection(event: UnitSelectionEvent) {
+    const units = event.units ?? [];
+    const isWarshipSelection =
+      (units.length > 0 && units[0].type() !== UnitType.Submarine) ||
+      (event.unit !== null && event.unit.type() !== UnitType.Submarine);
+
+    if (isWarshipSelection) {
+      this.multiSelectedSubmarines = [];
+      this.selectedUnit = null;
+      return;
+    }
+
     this.multiSelectedSubmarines = [];
     this.selectedUnit = null;
 
@@ -322,9 +322,9 @@ export class SubmarineSelectionController implements Controller {
       return;
     }
 
-    if ((event.units ?? []).length > 0) {
-      this.multiSelectedSubmarines = event.units;
-      this.view.setSelectedUnits(event.units.map((u) => u.id()));
+    if (units.length > 0) {
+      this.multiSelectedSubmarines = units;
+      this.view.setSelectedUnits(units.map((u) => u.id()));
     } else {
       this.selectedUnit = event.unit;
       this.view.setSelectedUnits(event.unit ? [event.unit.id()] : []);

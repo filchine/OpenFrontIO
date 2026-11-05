@@ -77,6 +77,9 @@ export class WarshipExecution implements Execution {
   }
 
   tick(ticks: number): void {
+    if (!this.warship) {
+      return;
+    }
     if (this.warship.health() <= 0) {
       this.warship.delete();
       return;
@@ -760,7 +763,7 @@ export class WarshipExecution implements Execution {
   }
 
   isActive(): boolean {
-    return this.warship?.isActive();
+    return this.warship?.isActive() ?? false;
   }
 
   isDocked(): boolean {

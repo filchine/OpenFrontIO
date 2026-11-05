@@ -46,6 +46,7 @@ export const PACKED_UNIT_TYPES: readonly UnitType[] = [
   UnitType.MIRVWarhead, // 14
   UnitType.Train, // 15
   UnitType.Factory, // 16
+  UnitType.Submarine, // 17
 ] as const;
 
 const UNIT_TYPE_TO_INT = new Map<UnitType, number>(
@@ -95,16 +96,24 @@ export const intToTrainType = (val: number): TrainType | undefined => {
   }
 };
 
-// Packed A: ownerID (12 bits), lastOwnerID (12 bits), unitType (5 bits)
+// Packed A: ownerID (12 bits), lastOwnerID (12 bits), unitType (5 bits), hasSubmarineState (1 bit), submarineIsSubmerged (1 bit)
 export const packA = (
   ownerID: number,
   lastOwnerID: number | undefined,
   unitType: UnitType,
+  hasSubmarineState = false,
+  submarineIsSubmerged = false,
 ): number => {
   const oID = ownerID & 0xfff;
   const lID = lastOwnerID !== undefined ? lastOwnerID & 0xfff : 0xfff;
   const uType = unitTypeToInt(unitType) & 0x1f;
-  return oID | (lID << 12) | (uType << 24);
+  return (
+    oID |
+    (lID << 12) |
+    (uType << 24) |
+    ((hasSubmarineState ? 1 : 0) << 29) |
+    ((submarineIsSubmerged ? 1 : 0) << 30)
+  );
 };
 
 export const unpackAOwnerID = (packed: number): number => packed & 0xfff;
@@ -114,6 +123,10 @@ export const unpackALastOwnerID = (packed: number): number | undefined => {
 };
 export const unpackAUnitType = (packed: number): UnitType =>
   intToUnitType((packed >> 24) & 0x1f);
+export const unpackAHasSubmarineState = (packed: number): boolean =>
+  (packed & (1 << 29)) !== 0;
+export const unpackASubmarineIsSubmerged = (packed: number): boolean =>
+  (packed & (1 << 30)) !== 0;
 
 // Packed B: level (8 bits), warshipState (2 bits), flags (many bits)
 export const packB = (update: UnitUpdate): number => {
@@ -132,17 +145,20 @@ export const packB = (update: UnitUpdate): number => {
 
   val |= (trainTypeToInt(update.trainType) & 0x3) << 15;
 
+  const navalState = update.warshipState ?? update.submarineState;
   if (update.warshipState) {
     val |= 1 << 17;
+  }
+  if (navalState) {
     const s =
-      update.warshipState.state === "patrolling"
+      navalState.state === "patrolling"
         ? 0
-        : update.warshipState.state === "retreating"
+        : navalState.state === "retreating"
           ? 1
           : 2;
     val |= (s & 0x3) << 18;
-    if (update.warshipState.isInCombat) val |= 1 << 20;
-    val |= (update.warshipState.veterancy & 0x3f) << 21; // 6 bits for veterancy
+    if (navalState.isInCombat) val |= 1 << 20;
+    val |= (navalState.veterancy & 0x3f) << 21; // 6 bits for veterancy
   }
 
   if (update.transportShipState) {
@@ -283,6 +299,17 @@ export class PackedUnitUpdateDecoder {
   get hasWarshipState(): boolean {
     return unpackBHasWarshipState(this.buffer[this.offset + OFFSET_PACKED_B]);
   }
+  get hasSubmarineState(): boolean {
+    return unpackAHasSubmarineState(this.buffer[this.offset + OFFSET_PACKED_A]);
+  }
+  get submarineIsSubmerged(): boolean {
+    return unpackASubmarineIsSubmerged(
+      this.buffer[this.offset + OFFSET_PACKED_A],
+    );
+  }
+  get submarineSubmergeCooldown(): number {
+    return this.buffer[this.offset + OFFSET_NUKE_WAIT_TICKS];
+  }
   get warshipStateState(): "patrolling" | "retreating" | "docked" {
     return unpackBWarshipStateState(this.buffer[this.offset + OFFSET_PACKED_B]);
   }
@@ -362,6 +389,21 @@ export class PackedUnitUpdateDecoder {
       };
     }
 
+    let submarineState;
+    if (this.hasSubmarineState) {
+      submarineState = {
+        state: this.warshipStateState,
+        patrolTile: this.warshipPatrolTile,
+        retreatPort: this.warshipRetreatPort,
+        isInCombat: this.warshipIsInCombat,
+        lastCombatTick: this.warshipLastCombatTick,
+        isSubmerged: this.submarineIsSubmerged,
+        submergeCooldown: this.submarineSubmergeCooldown,
+        veterancy: this.warshipVeterancy,
+        veterancyProgress: this.warshipVeterancyProgress,
+      };
+    }
+
     let transportShipState;
     if (this.hasTransportShipState) {
       transportShipState = {
@@ -400,6 +442,7 @@ export class PackedUnitUpdateDecoder {
       isActive: this.isActive,
       reachedTarget: this.reachedTarget,
       warshipState,
+      ...(submarineState !== undefined ? { submarineState } : {}),
       transportShipState,
       nukeState,
       targetable: this.targetable,
@@ -449,15 +492,16 @@ export function packUnitUpdates(units: UnitUpdate[]): {
     packedUnitUpdates[offset + OFFSET_MARKED_FOR_DELETION] =
       update.markedForDeletion !== false ? update.markedForDeletion : NaN;
 
-    if (update.warshipState) {
+    const navalState = update.warshipState ?? update.submarineState;
+    if (navalState) {
       packedUnitUpdates[offset + OFFSET_WARSHIP_LAST_COMBAT_TICK] =
-        update.warshipState.lastCombatTick;
+        navalState.lastCombatTick;
       packedUnitUpdates[offset + OFFSET_WARSHIP_PATROL_TILE] =
-        update.warshipState.patrolTile ?? NaN;
+        navalState.patrolTile ?? NaN;
       packedUnitUpdates[offset + OFFSET_WARSHIP_RETREAT_PORT] =
-        update.warshipState.retreatPort ?? NaN;
+        navalState.retreatPort ?? NaN;
       packedUnitUpdates[offset + OFFSET_WARSHIP_VETERANCY_PROGRESS] =
-        update.warshipState.veterancyProgress;
+        navalState.veterancyProgress;
     } else {
       packedUnitUpdates[offset + OFFSET_WARSHIP_LAST_COMBAT_TICK] = 0;
       packedUnitUpdates[offset + OFFSET_WARSHIP_PATROL_TILE] = NaN;
@@ -483,14 +527,18 @@ export function packUnitUpdates(units: UnitUpdate[]): {
 
     packedUnitUpdates[offset + OFFSET_TRANSPORT_TROOPS] =
       update.transportShipState ? update.transportShipState.troops : 0;
-    packedUnitUpdates[offset + OFFSET_NUKE_WAIT_TICKS] = update.nukeState
-      ? update.nukeState.waitTicks
-      : 0;
+    packedUnitUpdates[offset + OFFSET_NUKE_WAIT_TICKS] = update.submarineState
+      ? update.submarineState.submergeCooldown
+      : update.nukeState
+        ? update.nukeState.waitTicks
+        : 0;
 
     packedUnitUpdates[offset + OFFSET_PACKED_A] = packA(
       update.ownerID,
       update.lastOwnerID,
       update.unitType,
+      update.submarineState !== undefined,
+      update.submarineState?.isSubmerged ?? false,
     );
     packedUnitUpdates[offset + OFFSET_PACKED_B] = packB(update);
     packedUnitUpdates[offset + OFFSET_LEVEL] = update.level;

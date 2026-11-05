@@ -106,8 +106,8 @@ describe("mobile UnitDisplay layout", () => {
       expect(grid?.classList.contains("max-[360px]:auto-cols-[44px]")).toBe(
         true,
       );
-      expect(grid?.children).toHaveLength(10);
-      expect(grid?.style.getPropertyValue("--unit-display-columns")).toBe("10");
+      expect(grid?.children).toHaveLength(11);
+      expect(grid?.style.getPropertyValue("--unit-display-columns")).toBe("11");
     } finally {
       display.remove();
     }

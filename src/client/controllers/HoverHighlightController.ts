@@ -60,6 +60,7 @@ export class HoverHighlightController implements Controller {
       let closestDistSquared = 2500;
       for (const u of this.game.units(
         UnitType.Warship,
+        UnitType.Submarine,
         UnitType.TradeShip,
         UnitType.TransportShip,
       )) {

@@ -59,6 +59,53 @@ describe("PackedUnitUpdates", () => {
     expect(unpacked).toEqual(original);
   });
 
+  it("packs and unpacks a Submarine UnitUpdate with submarineState", () => {
+    const original: UnitUpdate = {
+      type: GameUpdateType.Unit,
+      unitType: UnitType.Submarine,
+      troops: 0,
+      id: 77,
+      ownerID: 5,
+      lastOwnerID: undefined,
+      pos: 300,
+      lastPos: 299,
+      isActive: true,
+      reachedTarget: false,
+      targetable: true,
+      markedForDeletion: false,
+      targetUnitId: 12,
+      targetTile: 310,
+      health: 350,
+      underConstruction: false,
+      level: 1,
+      hasTrainStation: false,
+      trainType: undefined,
+      loaded: undefined,
+      missileTimerQueue: [],
+      warshipState: undefined,
+      submarineState: {
+        state: "patrolling",
+        patrolTile: 320,
+        retreatPort: undefined,
+        isInCombat: true,
+        lastCombatTick: 450,
+        isSubmerged: true,
+        submergeCooldown: 15,
+        veterancy: 2,
+        veterancyProgress: 10,
+      },
+      transportShipState: undefined,
+      nukeState: undefined,
+      samUpgrade: undefined,
+    };
+
+    const { packedUnitUpdates } = packUnitUpdatesFn([original]);
+    const decoder = new PackedUnitUpdateDecoder(packedUnitUpdates, 0);
+    const unpacked = decoder.toUnitUpdate();
+
+    expect(unpacked).toEqual(original);
+  });
+
   it("packs and unpacks a complex UnitUpdate with samUpgrade", () => {
     const original: UnitUpdate = {
       type: GameUpdateType.Unit,

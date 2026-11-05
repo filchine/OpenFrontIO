@@ -12,8 +12,8 @@ import { translateText } from "../../../Utils";
 // Display order for the buildings table. Declared as a Record rather than a
 // bare array so `satisfies` fails compilation when a structure is added to
 // `otherUnits` without being placed here — a standalone type-level assertion
-// would trip no-unused-vars. "wshp" is the one deliberate omission: warships
-// are not buildings and have their own section below.
+// would trip no-unused-vars. "wshp" and "sub" are the deliberate omissions:
+// warships and submarines are not buildings and have their own section below.
 const BUILDING_ORDER = {
   city: 1,
   port: 2,
@@ -22,7 +22,7 @@ const BUILDING_ORDER = {
   silo: 5,
   saml: 6,
 } as const satisfies Record<
-  Exclude<(typeof otherUnits)[number], "wshp">,
+  Exclude<(typeof otherUnits)[number], "wshp" | "sub">,
   number
 >;
 
@@ -43,6 +43,7 @@ const UNIT_LABEL_KEYS = {
   saml: "unit_type.sam_launcher",
   silo: "unit_type.missile_silo",
   wshp: "unit_type.warship",
+  sub: "unit_type.submarine",
   abomb: "unit_type.atom_bomb",
   hbomb: "unit_type.hydrogen_bomb",
   mirv: "unit_type.mirv",

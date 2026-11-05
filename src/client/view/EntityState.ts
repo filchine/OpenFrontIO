@@ -54,7 +54,8 @@ export function unitStateFromUpdate(u: UnitUpdate): UnitState {
     reachedTarget: u.reachedTarget,
     retreating:
       (u.transportShipState?.isRetreating ?? false) ||
-      u.warshipState?.state === "retreating",
+      u.warshipState?.state === "retreating" ||
+      u.submarineState?.state === "retreating",
     targetable: u.targetable,
     waitTicks: u.nukeState?.waitTicks ?? 0,
     markedForDeletion: u.markedForDeletion,
@@ -65,7 +66,7 @@ export function unitStateFromUpdate(u: UnitUpdate): UnitState {
     troops: u.troops,
     missileTimerQueue: u.missileTimerQueue,
     level: u.level,
-    veterancy: u.warshipState?.veterancy ?? 0,
+    veterancy: u.warshipState?.veterancy ?? u.submarineState?.veterancy ?? 0,
     hasTrainStation: u.hasTrainStation,
     trainType: trainTypeToNum(u.trainType),
     loaded: u.loaded ?? null,
@@ -88,7 +89,8 @@ export function applyUnitUpdateInPlace(target: UnitState, u: UnitUpdate): void {
   target.reachedTarget = u.reachedTarget;
   target.retreating =
     (u.transportShipState?.isRetreating ?? false) ||
-    u.warshipState?.state === "retreating";
+    u.warshipState?.state === "retreating" ||
+    u.submarineState?.state === "retreating";
   target.targetable = u.targetable;
   target.waitTicks = u.nukeState?.waitTicks ?? 0;
   target.markedForDeletion = u.markedForDeletion;
@@ -99,7 +101,8 @@ export function applyUnitUpdateInPlace(target: UnitState, u: UnitUpdate): void {
   target.troops = u.troops;
   target.missileTimerQueue = u.missileTimerQueue;
   target.level = u.level;
-  target.veterancy = u.warshipState?.veterancy ?? 0;
+  target.veterancy =
+    u.warshipState?.veterancy ?? u.submarineState?.veterancy ?? 0;
   target.hasTrainStation = u.hasTrainStation;
   target.trainType = trainTypeToNum(u.trainType);
   target.loaded = u.loaded ?? null;

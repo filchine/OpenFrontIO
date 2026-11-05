@@ -314,6 +314,17 @@ export class WarshipSelectionController implements Controller {
    * When event.isSelected is false it clears all selection state.
    */
   private onUnitSelection(event: UnitSelectionEvent) {
+    const units = event.units ?? [];
+    const isSubmarineSelection =
+      (units.length > 0 && units[0].type() === UnitType.Submarine) ||
+      event.unit?.type() === UnitType.Submarine;
+
+    if (isSubmarineSelection) {
+      this.multiSelectedWarships = [];
+      this.selectedUnit = null;
+      return;
+    }
+
     this.multiSelectedWarships = [];
     this.selectedUnit = null;
 
@@ -322,9 +333,9 @@ export class WarshipSelectionController implements Controller {
       return;
     }
 
-    if ((event.units ?? []).length > 0) {
-      this.multiSelectedWarships = event.units;
-      this.view.setSelectedUnits(event.units.map((u) => u.id()));
+    if (units.length > 0) {
+      this.multiSelectedWarships = units;
+      this.view.setSelectedUnits(units.map((u) => u.id()));
     } else {
       this.selectedUnit = event.unit;
       this.view.setSelectedUnits(event.unit ? [event.unit.id()] : []);

@@ -77,6 +77,9 @@ export class SubmarineExecution implements Execution {
   }
 
   tick(ticks: number): void {
+    if (!this.submarine) {
+      return;
+    }
     if (this.submarine.health() <= 0) {
       this.submarine.delete();
       return;
@@ -834,7 +837,7 @@ export class SubmarineExecution implements Execution {
   }
 
   isActive(): boolean {
-    return this.submarine?.isActive();
+    return this.submarine?.isActive() ?? false;
   }
 
   isDocked(): boolean {

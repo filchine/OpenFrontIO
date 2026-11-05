@@ -36,6 +36,7 @@ export const otherUnits = [
   "silo",
   "saml",
   "fact",
+  "sub",
 ] as const;
 export const OtherUnitSchema = z.enum(otherUnits);
 export type OtherUnit = z.infer<typeof OtherUnitSchema>;
@@ -46,6 +47,7 @@ export type OtherUnitType =
   | UnitType.Port
   | UnitType.SAMLauncher
   | UnitType.Warship
+  | UnitType.Submarine
   | UnitType.Factory;
 
 export const unitTypeToOtherUnit = {
@@ -55,6 +57,7 @@ export const unitTypeToOtherUnit = {
   [UnitType.Port]: "port",
   [UnitType.SAMLauncher]: "saml",
   [UnitType.Warship]: "wshp",
+  [UnitType.Submarine]: "sub",
   [UnitType.Factory]: "fact",
 } as const satisfies Record<OtherUnitType, OtherUnit>;
 
