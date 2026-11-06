@@ -3,7 +3,7 @@
 # Run on your server (alpine) as root or with sudo
 # Usage: sudo ./run.sh
 
-set -euo pipefail
+set -eu
 
 # Colors
 RED='\033[0;31m'
@@ -11,12 +11,12 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-log() { echo -e "${GREEN}[run]${NC} $*"; }
-warn() { echo -e "${YELLOW}[run]${NC} $*"; }
-error() { echo -e "${RED}[run]${NC} $*"; exit 1; }
+log() { echo "${GREEN}[run]${NC} $*"; }
+warn() { echo "${YELLOW}[run]${NC} $*"; }
+error() { echo "${RED}[run]${NC} $*"; exit 1; }
 
-# Check root
-if [[ $EUID -ne 0 ]]; then
+# Check root (POSIX compatible)
+if [ "$(id -u)" -ne 0 ]; then
     error "Run as root: sudo ./run.sh"
 fi
 
@@ -26,7 +26,7 @@ USER="filippo"
 log "Starting OpenFront game server..."
 
 # 1. Verify .env.prod exists and has keys
-if [[ ! -f "$REPO_DIR/.env.prod" ]]; then
+if [ ! -f "$REPO_DIR/.env.prod" ]; then
     error ".env.prod not found! Run ./install.sh first"
 fi
 
@@ -64,7 +64,7 @@ fi
 # 6. Test run (quick validation)
 log "Testing server startup..."
 cd "$REPO_DIR"
-timeout 10 sudo -u "$USER" bash -c "
+timeout 10 sudo -u "$USER" sh -c "
     export \$(grep -v '^#' .env.prod | xargs)
     npx tsx src/server/Server.ts &
     sleep 5

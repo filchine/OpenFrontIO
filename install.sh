@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/bin/sh
 # OpenFront Production Install Script
 # Run on your server (alpine) as root or with sudo
 # Usage: sudo ./install.sh
 
-set -euo pipefail
+set -eu
 
 # Colors
 RED='\033[0;31m'
@@ -11,18 +11,12 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-log() { echo -e "${GREEN}[install]${NC} $*"; }
-warn() { echo -e "${YELLOW}[install]${NC} $*"; }
-error() { echo -e "${RED}[install]${NC} $*"; exit 1; }
+log() { echo "${GREEN}[install]${NC} $*"; }
+warn() { echo "${YELLOW}[install]${NC} $*"; }
+error() { echo "${RED}[install]${NC} $*"; exit 1; }
 
-# Install bash if not present (Alpine uses ash by default)
-if ! command -v bash >/dev/null 2>&1; then
-    log "Installing bash..."
-    apk add --no-cache bash
-fi
-
-# Check root
-if [[ $EUID -ne 0 ]]; then
+# Check root (POSIX compatible)
+if [ "$(id -u)" -ne 0 ]; then
     error "Run as root: sudo ./install.sh"
 fi
 
@@ -32,11 +26,11 @@ USER="filippo"
 log "Installing OpenFront game server..."
 
 # 1. Install dependencies
-log "Installing Node.js, npm, tsx..."
-apk add --no-cache nodejs npm
+log "Installing Node.js, npm, bash..."
+apk add --no-cache nodejs npm bash
 
 # 2. Clone/pull repo
-if [[ ! -d "$REPO_DIR/.git" ]]; then
+if [ ! -d "$REPO_DIR/.git" ]; then
     log "Cloning repository..."
     git clone https://github.com/openfrontio/OpenFrontIO.git "$REPO_DIR"
     chown -R "$USER:$USER" "$REPO_DIR"
@@ -52,7 +46,7 @@ cd "$REPO_DIR"
 sudo -u "$USER" npm run inst
 
 # 4. Create .env.prod if missing
-if [[ ! -f "$REPO_DIR/.env.prod" ]]; then
+if [ ! -f "$REPO_DIR/.env.prod" ]; then
     log "Creating .env.prod template..."
     cat > "$REPO_DIR/.env.prod" << 'ENVEOF'
 # OpenFront Production Environment
