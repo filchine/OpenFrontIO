@@ -15,6 +15,12 @@ log() { echo -e "${GREEN}[install]${NC} $*"; }
 warn() { echo -e "${YELLOW}[install]${NC} $*"; }
 error() { echo -e "${RED}[install]${NC} $*"; exit 1; }
 
+# Install bash if not present (Alpine uses ash by default)
+if ! command -v bash >/dev/null 2>&1; then
+    log "Installing bash..."
+    apk add --no-cache bash
+fi
+
 # Check root
 if [[ $EUID -ne 0 ]]; then
     error "Run as root: sudo ./install.sh"
