@@ -12,4 +12,10 @@ app.get("/api/health", (_, res) => res.json({instanceId:"standalone-1",color:"bl
 // map_weights for standalone mode - return empty (all maps get default weight)
 app.get("/map_weights", (_, res) => res.json({maps:{}}));
 
+// cosmetics for standalone mode - empty array
+app.get("/cosmetics.json", (_, res) => res.json([]));
+
+// reserved_clan_tags for standalone mode - empty array
+app.get("/reserved_clan_tags", (_, res) => res.json([]));
+
 app.listen(8787,"0.0.0.0",()=>console.log("[mock-api] :8787"));
