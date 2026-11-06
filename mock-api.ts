@@ -5,6 +5,9 @@ app.get("/.well-known/jwks.json", (_, res) => res.json({
   keys: [{alg:"EdDSA",crv:"Ed25519",kty:"OKP",x:"11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo"}]
 }));
 
+// cluster.json - server list endpoint (returns empty for standalone mode, client falls back to local values)
+app.get("/cluster.json", (_, res) => res.json({latest: undefined, servers: {}}));
+
 app.post("/cluster/checkin", (_, res) => res.json({state:"open"}));
 
 app.get("/api/health", (_, res) => res.json({instanceId:"standalone-1",color:"blue"}));
